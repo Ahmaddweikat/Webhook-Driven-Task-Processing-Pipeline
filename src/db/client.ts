@@ -1,6 +1,5 @@
-import { Pool } from "pg";
+import postgres from "postgres";
+import { drizzle } from "drizzle-orm/postgres-js";
 import { config } from "../config";
 
-export const db = new Pool({
-  connectionString: config.databaseUrl,
-});
+const conn = postgres(config.db.url);
