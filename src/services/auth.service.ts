@@ -15,7 +15,7 @@ import {
 } from "../db/queries/user";
 
 function generateAccessToken(userId: string, email: string) {
-  return jwt.sign({ userId, email }, config.jwtSecret, { expiresIn: "1m" });
+  return jwt.sign({ userId, email }, config.jwtSecret, { expiresIn: "60m" });
 }
 
 function generateRefreshToken() {
