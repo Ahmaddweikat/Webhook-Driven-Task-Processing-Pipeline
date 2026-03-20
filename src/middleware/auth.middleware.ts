@@ -3,7 +3,7 @@ import jwt from "jsonwebtoken";
 import { config } from "../config";
 import { AuthRequest, JwtPayload } from "../types/index";
 
-export function authMiddleware(
+export async function authMiddleware(
   req: AuthRequest,
   res: Response,
   next: NextFunction,
@@ -21,7 +21,7 @@ export function authMiddleware(
     const payload = jwt.verify(token, config.jwtSecret) as JwtPayload;
     req.user = payload;
     next();
-  } catch {
-    res.status(401).json({ error: "Invalid or expired token" });
+  } catch (err: any) {
+    res.status(401).json({ error: err.message });
   }
 }

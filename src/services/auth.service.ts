@@ -14,8 +14,10 @@ import {
   invalidateRefreshToken,
 } from "../db/queries/user";
 
-function generateAccessToken(userId: string, email: string) {
-  return jwt.sign({ userId, email }, config.jwtSecret, { expiresIn: "60m" });
+function generateAccessToken(userId: string, email: string, isAdmin: boolean) {
+  return jwt.sign({ userId, email, isAdmin }, config.jwtSecret, {
+    expiresIn: "15m",
+  });
 }
 
 function generateRefreshToken() {
@@ -30,7 +32,7 @@ export async function registerUser(
   const passwordHash = await bcrypt.hash(password, 10);
   const user = await insertUser(name, email, passwordHash);
 
-  const accessToken = generateAccessToken(user.id, user.email);
+  const accessToken = generateAccessToken(user.id, user.email, user.isAdmin);
   const refreshToken = generateRefreshToken();
 
   const accessExpiresAt = new Date();
@@ -59,7 +61,7 @@ export async function loginUser(email: string, password: string) {
   await invalidateAllUserAccessTokens(user.id);
   await invalidateAllUserRefreshTokens(user.id);
 
-  const accessToken = generateAccessToken(user.id, user.email);
+  const accessToken = generateAccessToken(user.id, user.email, user.isAdmin);
   const refreshToken = generateRefreshToken();
 
   const accessExpiresAt = new Date();
@@ -93,8 +95,7 @@ export async function refreshAccessToken(refreshToken: string) {
 
   await invalidateAllUserAccessTokens(user.id);
 
-  const accessToken = generateAccessToken(user.id, user.email);
-
+  const accessToken = generateAccessToken(user.id, user.email, user.isAdmin);
   const accessExpiresAt = new Date();
   accessExpiresAt.setMinutes(accessExpiresAt.getMinutes() + 15);
 

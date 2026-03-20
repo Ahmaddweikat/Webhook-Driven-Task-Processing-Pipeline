@@ -9,7 +9,11 @@ export async function insertUser(
 ) {
   const [user] = await db
     .insert(users)
-    .values({ name, email, passwordHash })
+    .values({
+      name,
+      email,
+      passwordHash,
+    })
     .returning();
   return user;
 }

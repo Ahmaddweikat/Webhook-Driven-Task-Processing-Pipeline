@@ -7,15 +7,16 @@ import {
   remove,
 } from "../controllers/pipeline.controller";
 import { authMiddleware } from "../middleware/auth.middleware";
+import { adminMiddleware } from "../middleware/admin.middleware";
 
 const router = Router();
 
 router.use(authMiddleware);
 
-router.post("/", create);
 router.get("/", getAll);
 router.get("/:id", getOne);
-router.put("/:id", update);
-router.delete("/:id", remove);
+router.post("/", adminMiddleware, create);
+router.put("/:id", adminMiddleware, update);
+router.delete("/:id", adminMiddleware, remove);
 
 export default router;
