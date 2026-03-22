@@ -1,14 +1,16 @@
 import express from "express";
+import * as swaggerUi from "swagger-ui-express";
 import authRoutes from "./api/auth.routes";
 import pipelineRoutes from "./api/pipelines.routes";
 import webhookRoutes from "./api/webhooks.routes";
 import historyRoutes from "./api/history.routes";
 import { swaggerDocument } from "./docs/swagger";
-import * as swaggerUi from "swagger-ui-express";
+import { globalRateLimit } from "./middleware/rate-limit.middleware";
 
 export const app = express();
 
 app.use(express.json());
+app.use(globalRateLimit);
 
 app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 
