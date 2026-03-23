@@ -1,4 +1,4 @@
-import { v4 as uuidv4 } from "uuid";
+import { randomUUID } from "crypto";
 import {
   insertPipeline,
   insertSubscribers,
@@ -17,7 +17,7 @@ export async function createPipeline(data: {
   actionConfig: object;
   subscriberUrls: string[];
 }) {
-  const sourceUrl = `webhooks/${uuidv4()}`;
+  const sourceUrl = `webhooks/${randomUUID()}`;
 
   const pipeline = await insertPipeline({
     name: data.name,

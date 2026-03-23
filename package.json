@@ -10,7 +10,8 @@
     "build": "tsc",
     "start": "node dist/server.js",
     "db:push": "drizzle-kit push",
-    "db:studio": "drizzle-kit studio"
+    "db:studio": "drizzle-kit studio",
+    "migrate": "drizzle-kit push"
   },
   "repository": {
     "type": "git",
