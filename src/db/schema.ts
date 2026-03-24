@@ -5,6 +5,7 @@ import {
   jsonb,
   integer,
   timestamp,
+  boolean,
 } from "drizzle-orm/pg-core";
 
 export const users = pgTable("users", {
@@ -65,4 +66,25 @@ export const deliveryAttempts = pgTable("delivery_attempts", {
   errorMessage: text("error_message"),
   status: text("status").notNull().default("pending"),
   attemptedAt: timestamp("attempted_at").notNull().defaultNow(),
+});
+export const accessTokens = pgTable("access_tokens", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  userId: uuid("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  token: text("token").notNull().unique(),
+  isValid: boolean("is_valid").notNull().default(true),
+  expiresAt: timestamp("expires_at").notNull(),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+export const refreshTokens = pgTable("refresh_tokens", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  userId: uuid("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  token: text("token").notNull().unique(),
+  isValid: boolean("is_valid").notNull().default(true),
+  expiresAt: timestamp("expires_at").notNull(),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
 });
