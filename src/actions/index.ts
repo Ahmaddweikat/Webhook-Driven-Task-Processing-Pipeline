@@ -5,6 +5,7 @@ import { aiSummaryAction } from "./ai-summary.action";
 import { conditionalFilterAction } from "./conditional-filter.action";
 import { templateTransformAction } from "./template-transform.action";
 import { httpEnrichAction } from "./http-enrich.action";
+import { jsonToXmlAction } from "./json-to-xml.action";
 
 export type ActionHandler = (
   payload: Record<string, unknown>,
@@ -19,4 +20,5 @@ export const actions: Record<string, ActionHandler> = {
   conditional_filter: conditionalFilterAction,
   template_transform: templateTransformAction,
   http_enrich: httpEnrichAction,
+  json_to_xml: jsonToXmlAction,
 };
