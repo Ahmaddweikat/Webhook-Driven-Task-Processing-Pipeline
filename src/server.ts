@@ -1,9 +1,11 @@
-// server.ts
 import dotenv from "dotenv";
-require("dotenv").config();
+dotenv.config();
+
+import { config } from "./config";
+
+if (!config.jwtSecret) throw new Error("JWT_SECRET is missing!");
 
 import { app } from "./app";
-import { config } from "./config"; // now config.jwtSecret is set
 
 app.listen(config.port, () => {
   console.log(`Server running on port ${config.port}`);
