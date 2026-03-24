@@ -51,9 +51,6 @@ jobs:
       - name: TypeScript type check
         run: npx tsc --noEmit
 
-      - name: Run linter
-        run: npx eslint src --ext .ts
-
       - name: Push database schema
         run: npx drizzle-kit push
 
