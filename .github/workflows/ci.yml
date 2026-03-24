@@ -6,6 +6,10 @@ on:
   pull_request:
     branches: ["**"]
 
+permissions:
+  contents: read
+  id-token: write
+
 jobs:
   build-and-test:
     runs-on: ubuntu-latest
@@ -26,10 +30,10 @@ jobs:
           --health-retries 5
 
     env:
-      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/pipeline_service_test
-      JWT_SECRET: test-secret-key-for-ci
-      ANTHROPIC_API_KEY: sk-ant-test
-      PORT: 3000
+      DATABASE_URL: postgresql://neondb_owner:npg_uY0agKRDtF9N@ep-soft-bird-anuo0mcl-pooler.c-6.us-east-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require
+      JWT_SECRET: 7d4b6932b72de09eba64d1d548bcd62120192672ebd29bcb0969a7b7caad761fce303c4a822419a6c7c5565bd01c64f1791a0ddcb9ece63388d8c2a2ddead004
+      ANTHROPIC_API_KEY: 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
+      PORT: 8080
 
     steps:
       - name: Checkout code
@@ -58,3 +62,59 @@ jobs:
 
       - name: Build
         run: npm run build
+
+  deploy:
+    name: Deploy
+    runs-on: ubuntu-latest
+    needs: build-and-test
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY }}
+          service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
+
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+
+      - name: Configure Docker
+        run: gcloud auth configure-docker us-central1-docker.pkg.dev
+
+      - name: Build and push API image
+        run: |
+          docker build -f Dockerfile \
+            -t us-central1-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/pipeline-service/api:${{ github.sha }} \
+            -t us-central1-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/pipeline-service/api:latest .
+          docker push us-central1-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/pipeline-service/api:${{ github.sha }}
+          docker push us-central1-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/pipeline-service/api:latest
+
+      - name: Build and push Worker image
+        run: |
+          docker build -f Dockerfile.worker \
+            -t us-central1-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/pipeline-service/worker:${{ github.sha }} \
+            -t us-central1-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/pipeline-service/worker:latest .
+          docker push us-central1-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/pipeline-service/worker:${{ github.sha }}
+          docker push us-central1-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/pipeline-service/worker:latest
+
+      - name: Deploy API to Cloud Run
+        run: |
+          gcloud run deploy pipeline-service \
+            --image us-central1-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/pipeline-service/api:${{ github.sha }} \
+            --platform managed \
+            --region us-east1 \
+            --allow-unauthenticated \
+            --set-env-vars="NODE_ENV=production,JWT_SECRET=${{ secrets.JWT_SECRET }},DATABASE_URL=${{ secrets.DATABASE_URL }},ANTHROPIC_API_KEY=${{ secrets.ANTHROPIC_API_KEY }}"
+
+      - name: Deploy Worker to Cloud Run
+        run: |
+          gcloud run deploy pipeline-service-worker \
+            --image us-central1-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/pipeline-service/worker:${{ github.sha }} \
+            --platform managed \
+            --region us-east1 \
+            --min-instances=1 \
+            --set-env-vars="NODE_ENV=production,JWT_SECRET=${{ secrets.JWT_SECRET }},DATABASE_URL=${{ secrets.DATABASE_URL }},ANTHROPIC_API_KEY=${{ secrets.ANTHROPIC_API_KEY }}"
