@@ -5,6 +5,8 @@ import {
   jsonb,
   integer,
   timestamp,
+  boolean,
+  unique,
 } from "drizzle-orm/pg-core";
 
 export const users = pgTable("users", {
@@ -12,12 +14,13 @@ export const users = pgTable("users", {
   email: text("email").notNull().unique(),
   passwordHash: text("password_hash").notNull(),
   name: text("name").notNull(),
+  isAdmin: boolean("is_admin").notNull().default(false), // ← add this
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
 export const pipelines = pgTable("pipelines", {
   id: uuid("id").primaryKey().defaultRandom(),
-  name: text("name").notNull(),
+  name: text("name").notNull().unique(), // ← add unique
   description: text("description"),
   sourceUrl: text("source_url").notNull().unique(),
   actionType: text("action_type").notNull(),
@@ -27,14 +30,20 @@ export const pipelines = pgTable("pipelines", {
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
 
-export const subscribers = pgTable("subscribers", {
-  id: uuid("id").primaryKey().defaultRandom(),
-  pipelineId: uuid("pipeline_id")
-    .notNull()
-    .references(() => pipelines.id, { onDelete: "cascade" }),
-  url: text("url").notNull(),
-  createdAt: timestamp("created_at").notNull().defaultNow(),
-});
+export const subscribers = pgTable(
+  "subscribers",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    pipelineId: uuid("pipeline_id")
+      .notNull()
+      .references(() => pipelines.id, { onDelete: "cascade" }),
+    url: text("url").notNull(),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+  },
+  (table) => ({
+    uniqueUrl: unique().on(table.pipelineId, table.url), // ← same url can't be added twice to same pipeline
+  }),
+);
 
 export const pipelineRuns = pgTable("pipeline_runs", {
   id: uuid("id").primaryKey().defaultRandom(),
@@ -65,4 +74,25 @@ export const deliveryAttempts = pgTable("delivery_attempts", {
   errorMessage: text("error_message"),
   status: text("status").notNull().default("pending"),
   attemptedAt: timestamp("attempted_at").notNull().defaultNow(),
+});
+export const accessTokens = pgTable("access_tokens", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  userId: uuid("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  token: text("token").notNull().unique(),
+  isValid: boolean("is_valid").notNull().default(true),
+  expiresAt: timestamp("expires_at").notNull(),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+export const refreshTokens = pgTable("refresh_tokens", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  userId: uuid("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  token: text("token").notNull().unique(),
+  isValid: boolean("is_valid").notNull().default(true),
+  expiresAt: timestamp("expires_at").notNull(),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
 });
