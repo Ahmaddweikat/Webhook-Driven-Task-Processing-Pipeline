@@ -14,25 +14,10 @@ jobs:
   build-and-test:
     runs-on: ubuntu-latest
 
-    services:
-      postgres:
-        image: postgres:15
-        env:
-          POSTGRES_USER: postgres
-          POSTGRES_PASSWORD: postgres
-          POSTGRES_DB: pipeline_service_test
-        ports:
-          - 5432:5432
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-
     env:
-      DATABASE_URL: postgresql://neondb_owner:npg_uY0agKRDtF9N@ep-soft-bird-anuo0mcl-pooler.c-6.us-east-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require
-      JWT_SECRET: 7d4b6932b72de09eba64d1d548bcd62120192672ebd29bcb0969a7b7caad761fce303c4a822419a6c7c5565bd01c64f1791a0ddcb9ece63388d8c2a2ddead004
-      ANTHROPIC_API_KEY: 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
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      JWT_SECRET: ${{ secrets.JWT_SECRET }}
+      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
       PORT: 8080
 
     steps:
@@ -70,7 +55,7 @@ jobs:
       - name: Authenticate to Google Cloud
         uses: google-github-actions/auth@v2
         with:
-          service_account: ${{ secrets.GCP_CREDENTIALS }}
+          credentials_json: ${{ secrets.GCP_CREDENTIALS }}
 
       - name: Set up Cloud SDK
         uses: google-github-actions/setup-gcloud@v2
@@ -106,10 +91,10 @@ jobs:
       - name: Deploy Worker as Cloud Run Job
         run: |
           gcloud run jobs update pipeline-service-worker \
-          --image us-central1-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/pipeline-service/worker:${{ github.sha }} \
-          --region us-east1 \
-          --set-env-vars="NODE_ENV=production,JWT_SECRET=${{ secrets.JWT_SECRET }},DATABASE_URL=${{ secrets.DATABASE_URL }},ANTHROPIC_API_KEY=${{ secrets.ANTHROPIC_API_KEY }}" \
+            --image us-central1-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/pipeline-service/worker:${{ github.sha }} \
+            --region us-east1 \
+            --set-env-vars="NODE_ENV=production,JWT_SECRET=${{ secrets.JWT_SECRET }},DATABASE_URL=${{ secrets.DATABASE_URL }},ANTHROPIC_API_KEY=${{ secrets.ANTHROPIC_API_KEY }}" \
           || gcloud run jobs create pipeline-service-worker \
-          --image us-central1-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/pipeline-service/worker:${{ github.sha }} \
-          --region us-east1 \
-          --set-env-vars="NODE_ENV=production,JWT_SECRET=${{ secrets.JWT_SECRET }},DATABASE_URL=${{ secrets.DATABASE_URL }},ANTHROPIC_API_KEY=${{ secrets.ANTHROPIC_API_KEY }}"
+            --image us-central1-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/pipeline-service/worker:${{ github.sha }} \
+            --region us-east1 \
+            --set-env-vars="NODE_ENV=production,JWT_SECRET=${{ secrets.JWT_SECRET }},DATABASE_URL=${{ secrets.DATABASE_URL }},ANTHROPIC_API_KEY=${{ secrets.ANTHROPIC_API_KEY }}"
